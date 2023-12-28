@@ -1,34 +1,16 @@
 import { useState, useEffect } from 'react';
 import styles from './styles.module.css';
-import cloudy from '../../images/cloudy.avif';
-import foggy from '../../images/foggy.jpeg';
-import rainy from '../../images/rainy.avif';
-import snowy from '../../images/snowy.jpeg';
-import clear from '../../images/clear.jpeg';
-import drizzle from '../../images/drizzle.jpeg';
-import dusty from '../../images/dusty.webp';
-import smoke from '../../images/smoke.jpeg';
-import tornado from '../../images/tornado.jpeg';
 import defaultImage from '../../images/default.avif';
+import useWeatherApi from '../../hooks/useWeatherApi';
+import getImage from '../../constants';
  
-const getImage={
-    "Clouds": cloudy,
-    "Fog": foggy,
-    "Rain": rainy,
-    "Snow": snowy,
-    "Haze": clear,
-    "Clear": clear,
-    "Dust" : dusty,
-    "Drizzle": drizzle,
-    "Smoke": smoke,
-    "Tornado": tornado
-}
-
 function Searchbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [weatherDetails, setWeatherDetails] = useState({});
   const [lastSearched, setLastSearched] = useState('');
   const [loading, setLoading] = useState(false);
+  // const [searchHistory, setSearchHistory] = useState([]);
+  // const [suggestions, setSuggestions] = useState(false);
 
   useEffect(() => {
     const storedWeatherDetails = JSON.parse(localStorage.getItem('weatherDetails'));
@@ -50,45 +32,65 @@ function Searchbar() {
     localStorage.setItem('weatherDetails', JSON.stringify(weatherDetails));
   }, [weatherDetails]);
 
+  // useEffect(() => {
+  //   const storedSearchHistory = JSON.parse(localStorage.getItem('searchHistory')) || [];
+  //   setSearchHistory(storedSearchHistory);
+  // }, []);
+
   const { weather = [], name = '' } = weatherDetails;
 
-  const URL = `https://api.openweathermap.org/data/2.5/weather?q=${searchQuery}&APPID=08502e23209a6b1cb177bf1d54f06cc4`;
+  // const updateSearchHistory = (query) => {
+  //   const updatedHistory = [query, ...searchHistory.filter((item) => item !== query)].slice(0, 5);
+  //   setSearchHistory(updatedHistory);
+  //   localStorage.setItem('searchHistory', JSON.stringify(updatedHistory));
+  // };
 
-  const handleButtonClick = async () => {
-    try{
-      setLoading(true);
-      const response = await fetch(URL);
-      if (!response.ok) {
-        // If the response status is not okay (e.g., 404 Not Found), throw an error
-        throw new Error(`Weather data not found for ${searchQuery}`);
-      }
-      const data = await response.json();
-      setWeatherDetails(data);
+  const 
+  { handleButtonClick = ()=>{}, handleEnterKeyPress=()=>{}} 
+  = useWeatherApi({
+    setLoading: setLoading,
+    setWeatherDetails: setWeatherDetails,
+    searchQuery: searchQuery,
+    setLastSearched: setLastSearched
+  })
 
-      localStorage.setItem('lastSearched', searchQuery);
-      setLastSearched(searchQuery);
-    }catch(error){
-      console.log(error.message);
-      window.alert(error.message);
-    }finally{
-      setLoading(false)
-    }
-    }
+  
+
+  // const handleSuggestionClick = (suggestion) => {
+  //   setSearchQuery(suggestion);
+  //   handleButtonClick();
+  // };
     
 
   return (
     <div className={styles.SearchBarWrapper}>
       <div className={styles.SearchContainer}>
+        <div>
         <input
           className={styles.SearchInput}
           type="text"
           placeholder="Search..."
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            // setSuggestions(true)
+          }}
+          onKeyDown={handleEnterKeyPress}
         />
+        {/* {searchHistory.length > 0 && suggestions && searchQuery && (
+        <div className={styles.SearchHistory}>  
+            {searchHistory.map((suggestion, index) => (
+              <div key={index} onClick={() => handleSuggestionClick(suggestion)} className={styles.suggestion}>
+                {suggestion}
+              </div>
+            ))}
+        </div>
+      )} */}
+      </div>
         <button className={styles.SearchButton} onClick={handleButtonClick}>
           Search
         </button>
       </div>
+      
       {loading && <div className={styles.loader}>Loading...</div>}
       {weatherDetails && (
         <div className={styles.WeatherDetails}>
@@ -99,6 +101,7 @@ function Searchbar() {
           <img className={styles.background_image} src={getImage[weather[0]?.main] || defaultImage} alt='no img'/>
         </div>
       )}
+      
     </div>
   );
 }
